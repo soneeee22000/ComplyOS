@@ -7,12 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Ingest EU AI Act on build
-RUN python -m app.services.fetch_eu_ai_act && python -c "
-import asyncio
-from app.services.ingest_ai_act import ingest_eu_ai_act
-asyncio.run(ingest_eu_ai_act())
-"
+# Fetch and ingest EU AI Act on build
+RUN python -m app.services.fetch_eu_ai_act && python -c "import asyncio; from app.services.ingest_ai_act import ingest_eu_ai_act; asyncio.run(ingest_eu_ai_act())"
 
 EXPOSE 8000
 
