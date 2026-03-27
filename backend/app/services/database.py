@@ -3,7 +3,7 @@
 import json
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 
@@ -75,7 +75,7 @@ def create_system(name: str, description: str, department: str, use_case: str) -
     """Insert a new AI system and return it."""
     conn = get_connection()
     system_id = str(uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO ai_systems (id, name, description, department, use_case, created_at, updated_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -103,10 +103,23 @@ def get_system(system_id: str) -> dict | None:
     return dict(row) if row else None
 
 
+ALLOWED_SYSTEM_FIELDS = frozenset({
+    "risk_level", "annex_category", "classification_reasoning",
+    "confidence_score", "overall_compliance_score", "updated_at",
+})
+
+
 def update_system(system_id: str, **fields: str | float | int | None) -> dict | None:
-    """Update specific fields on an AI system."""
+    """Update specific fields on an AI system.
+
+    Only fields in ALLOWED_SYSTEM_FIELDS can be updated to prevent SQL injection.
+    """
+    invalid = set(fields) - ALLOWED_SYSTEM_FIELDS
+    if invalid:
+        raise ValueError(f"Invalid field(s): {invalid}")
+
     conn = get_connection()
-    fields["updated_at"] = datetime.utcnow().isoformat()
+    fields["updated_at"] = datetime.now(timezone.utc).isoformat()
     set_clause = ", ".join(f"{k} = ?" for k in fields)
     values = list(fields.values()) + [system_id]
     conn.execute(f"UPDATE ai_systems SET {set_clause} WHERE id = ?", values)
@@ -120,7 +133,7 @@ def save_assessment(system_id: str, overall_score: int, gaps: list, summary: str
     """Save a gap analysis assessment."""
     conn = get_connection()
     assessment_id = str(uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO assessments (id, system_id, overall_score, gaps, summary, priority_actions, assessed_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -159,7 +172,7 @@ def save_document(system_id: str, doc_type: str, content: str) -> dict:
     """Save a generated document."""
     conn = get_connection()
     doc_id = str(uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO documents (id, system_id, doc_type, content, generated_at) VALUES (?, ?, ?, ?, ?)",
         (doc_id, system_id, doc_type, content, now),
@@ -174,7 +187,7 @@ def log_audit(system_id: str | None, action: str, details: str | None = None) ->
     conn = get_connection()
     conn.execute(
         "INSERT INTO audit_log (id, system_id, action, details, created_at) VALUES (?, ?, ?, ?, ?)",
-        (str(uuid4()), system_id, action, details, datetime.utcnow().isoformat()),
+        (str(uuid4()), system_id, action, details, datetime.now(timezone.utc).isoformat()),
     )
     conn.commit()
     conn.close()

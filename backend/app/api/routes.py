@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from app.core.auth import verify_api_key
 
 from app.models.schemas import (
     AISystemCreate,
@@ -29,7 +30,7 @@ from app.services.database import (
     get_dashboard_stats,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 
 def _row_to_response(row: dict) -> AISystemResponse:

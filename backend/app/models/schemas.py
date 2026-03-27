@@ -41,8 +41,8 @@ class AISystemCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=10, max_length=5000)
-    department: str = Field(default="")
-    use_case: str = Field(default="")
+    department: str = Field(default="", max_length=200)
+    use_case: str = Field(default="", max_length=500)
 
 
 class AISystemResponse(BaseModel):
