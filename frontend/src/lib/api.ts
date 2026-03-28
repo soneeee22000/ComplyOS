@@ -71,6 +71,49 @@ export interface GapAnalysisResult {
   priority_actions: string[];
 }
 
+export interface SubRequirementStatus {
+  sub_requirement_id: string;
+  paragraph: string;
+  title: string;
+  status: string;
+  severity: string;
+  finding: string;
+  remediation: string;
+  estimated_effort: string;
+  evidence_required: string[];
+}
+
+export interface ArticleStatus {
+  article_id: string;
+  article_title: string;
+  article_status: string;
+  sub_requirement_statuses: SubRequirementStatus[];
+}
+
+export interface CrossReferenceFinding {
+  source_article: string;
+  target_article: string;
+  relationship: string;
+  finding: string;
+}
+
+export interface EnhancedGapAnalysisResult {
+  system_id: string;
+  overall_score: number;
+  summary: string;
+  priority_actions: string[];
+  requirement_statuses: ArticleStatus[];
+  cross_reference_findings: CrossReferenceFinding[];
+}
+
+export interface RequirementTreeResponse {
+  risk_level: string;
+  annex_category: string | null;
+  total_articles: number;
+  total_sub_requirements: number;
+  articles: Record<string, unknown>[];
+}
+
 export interface DashboardMetrics {
   total_systems: number;
   high_risk_count: number;
@@ -106,7 +149,14 @@ export const api = {
     }),
 
   analyzeSystem: (id: string) =>
-    request<GapAnalysisResult>(`/systems/${id}/analyze`, { method: "POST" }),
+    request<EnhancedGapAnalysisResult>(`/systems/${id}/analyze`, {
+      method: "POST",
+    }),
+
+  getRequirementTree: (riskLevel: string, annexCategory?: string) =>
+    request<RequirementTreeResponse>(
+      `/ontology/requirements?risk_level=${riskLevel}${annexCategory ? `&annex_category=${annexCategory}` : ""}`,
+    ),
 
   generateDocs: (systemId: string, docType: string) =>
     request<{ id: string; content: string; generated_at: string }>(

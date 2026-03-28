@@ -141,3 +141,59 @@ class DashboardMetrics(BaseModel):
     average_compliance_score: float
     days_until_deadline: int
     critical_gaps_count: int
+
+
+# --- Enhanced Ontology-Aware Schemas ---
+
+
+class SubRequirementStatus(BaseModel):
+    """Status of a single sub-requirement from the ontology."""
+
+    sub_requirement_id: str
+    paragraph: str
+    title: str
+    status: ComplianceStatus = ComplianceStatus.NOT_ASSESSED
+    severity: str = "major"
+    finding: str = ""
+    remediation: str = ""
+    estimated_effort: str = ""
+    evidence_required: list[str] = Field(default_factory=list)
+
+
+class ArticleStatus(BaseModel):
+    """Compliance status of an entire article, aggregated from sub-requirements."""
+
+    article_id: str
+    article_title: str
+    article_status: ComplianceStatus = ComplianceStatus.NOT_ASSESSED
+    sub_requirement_statuses: list[SubRequirementStatus] = Field(default_factory=list)
+
+
+class CrossReferenceFinding(BaseModel):
+    """A finding related to cross-references between articles."""
+
+    source_article: str
+    target_article: str
+    relationship: str
+    finding: str
+
+
+class EnhancedGapAnalysisResult(BaseModel):
+    """Ontology-aware gap analysis result with sub-requirement-level detail."""
+
+    system_id: str
+    overall_score: int = Field(..., ge=0, le=100)
+    summary: str
+    priority_actions: list[str]
+    requirement_statuses: list[ArticleStatus]
+    cross_reference_findings: list[CrossReferenceFinding] = Field(default_factory=list)
+
+
+class RequirementTreeResponse(BaseModel):
+    """Full requirement tree from the ontology for a given risk level."""
+
+    risk_level: str
+    annex_category: str | None = None
+    total_articles: int
+    total_sub_requirements: int
+    articles: list[dict]

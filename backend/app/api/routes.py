@@ -11,13 +11,16 @@ from app.models.schemas import (
     ClassificationResult,
     DashboardMetrics,
     DocumentGenerationRequest,
+    EnhancedGapAnalysisResult,
     GapAnalysisResult,
     GeneratedDocument,
+    RequirementTreeResponse,
 )
 from app.agents.classifier import classify_ai_system
 from app.agents.gap_analyzer import analyze_gaps
 from app.agents.doc_generator import generate_document
 from app.agents.chat_agent import answer_compliance_question
+from app.ontology.eu_ai_act import EU_AI_ACT_ONTOLOGY
 from app.services.database import (
     create_system,
     list_systems,
@@ -109,9 +112,9 @@ async def classify_system(system_id: str) -> ClassificationResult:
     return result
 
 
-@router.post("/systems/{system_id}/analyze", response_model=GapAnalysisResult)
-async def analyze_system(system_id: str) -> GapAnalysisResult:
-    """Run compliance gap analysis on a classified AI system."""
+@router.post("/systems/{system_id}/analyze", response_model=EnhancedGapAnalysisResult)
+async def analyze_system(system_id: str) -> EnhancedGapAnalysisResult:
+    """Run ontology-guided compliance gap analysis on a classified AI system."""
     row = get_system(system_id)
     if not row:
         raise HTTPException(status_code=404, detail="System not found")
@@ -130,10 +133,24 @@ async def analyze_system(system_id: str) -> GapAnalysisResult:
     )
 
     update_system(system_id, overall_compliance_score=result.overall_score)
+
+    flat_gaps = []
+    for art_status in result.requirement_statuses:
+        for sub in art_status.sub_requirement_statuses:
+            flat_gaps.append({
+                "requirement": sub.title,
+                "article": sub.paragraph,
+                "status": sub.status.value if hasattr(sub.status, "value") else sub.status,
+                "severity": sub.severity,
+                "description": sub.finding,
+                "remediation": sub.remediation,
+                "estimated_effort": sub.estimated_effort,
+            })
+
     save_assessment(
         system_id=system_id,
         overall_score=result.overall_score,
-        gaps=[g.model_dump() for g in result.gaps],
+        gaps=flat_gaps,
         summary=result.summary,
         priority_actions=result.priority_actions,
     )
@@ -206,3 +223,27 @@ async def get_dashboard() -> DashboardMetrics:
         days_until_deadline=max(days_remaining, 0),
         critical_gaps_count=stats["critical_gaps_count"],
     )
+
+
+# --- Ontology Endpoints ---
+
+
+@router.get("/ontology/requirements", response_model=RequirementTreeResponse)
+async def get_requirement_tree(
+    risk_level: str = "high", annex_category: str | None = None
+) -> RequirementTreeResponse:
+    """Return the full compliance requirement tree from the ontology.
+
+    No LLM call — instant response from structured legal data.
+    """
+    tree = EU_AI_ACT_ONTOLOGY.get_full_requirement_tree(risk_level, annex_category)
+    return RequirementTreeResponse(**tree)
+
+
+@router.get("/ontology/cross-references/{article_id}")
+async def get_cross_references(article_id: str) -> list[dict]:
+    """Resolve cross-references from a given article."""
+    article = EU_AI_ACT_ONTOLOGY.get_article(article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail=f"Article '{article_id}' not found")
+    return EU_AI_ACT_ONTOLOGY.resolve_cross_references(article_id)

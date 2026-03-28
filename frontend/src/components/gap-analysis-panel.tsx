@@ -13,8 +13,9 @@ import {
   Download,
   ClipboardCopy,
 } from "lucide-react";
-import type { AISystem, GapAnalysisResult } from "@/lib/api";
+import type { AISystem, EnhancedGapAnalysisResult } from "@/lib/api";
 import { api } from "@/lib/api";
+import { RequirementTree } from "@/components/requirement-tree";
 
 interface GapAnalysisPanelProps {
   system: AISystem;
@@ -42,7 +43,7 @@ const severityConfig: Record<
 };
 
 export function GapAnalysisPanel({ system }: GapAnalysisPanelProps) {
-  const [result, setResult] = useState<GapAnalysisResult | null>(null);
+  const [result, setResult] = useState<EnhancedGapAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [expandedGap, setExpandedGap] = useState<number | null>(null);
   const [generatingDoc, setGeneratingDoc] = useState(false);
@@ -114,133 +115,26 @@ export function GapAnalysisPanel({ system }: GapAnalysisPanelProps) {
       {error && <p className="text-sm text-destructive mt-2">{error}</p>}
 
       {result && (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="p-5 border-b border-border">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-foreground">Gap Analysis</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Score:</span>
-                <span
-                  className={`text-lg font-bold ${
-                    result.overall_score >= 70
-                      ? "text-success"
-                      : result.overall_score >= 40
-                        ? "text-accent"
-                        : "text-destructive"
-                  }`}
-                >
+        <div>
+          {result.requirement_statuses &&
+          result.requirement_statuses.length > 0 ? (
+            <RequirementTree
+              requirementStatuses={result.requirement_statuses}
+              overallScore={result.overall_score}
+            />
+          ) : (
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground">Gap Analysis</h3>
+                <span className="text-lg font-bold text-destructive">
                   {result.overall_score}%
                 </span>
               </div>
-            </div>
-            <p className="text-sm text-muted-foreground">{result.summary}</p>
-          </div>
-
-          {result.priority_actions.length > 0 && (
-            <div className="p-5 border-b border-border bg-destructive/5">
-              <h4 className="text-sm font-medium text-foreground mb-2">
-                Priority Actions
-              </h4>
-              <ol className="flex flex-col gap-1.5">
-                {result.priority_actions.map((action, index) => (
-                  <li
-                    key={index}
-                    className="text-sm text-foreground flex gap-2"
-                  >
-                    <span className="text-destructive font-bold shrink-0">
-                      {index + 1}.
-                    </span>
-                    {action}
-                  </li>
-                ))}
-              </ol>
+              <p className="text-sm text-muted-foreground">{result.summary}</p>
             </div>
           )}
 
-          <div className="divide-y divide-border">
-            {result.gaps.map((gap, index) => {
-              const config =
-                severityConfig[gap.severity] || severityConfig.minor;
-              const Icon = config.icon;
-              const isExpanded = expandedGap === index;
-
-              return (
-                <div key={index} className="p-4">
-                  <button
-                    onClick={() => setExpandedGap(isExpanded ? null : index)}
-                    className="w-full flex items-start gap-3 text-left"
-                  >
-                    <div
-                      className={`w-6 h-6 rounded flex items-center justify-center shrink-0 mt-0.5 border ${config.style}`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">
-                          {gap.requirement}
-                        </span>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {gap.article}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                        {gap.description}
-                      </p>
-                    </div>
-                    <div className="shrink-0 ml-2">
-                      {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </div>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="mt-3 ml-9 flex flex-col gap-3">
-                      <div>
-                        <span className="text-xs font-medium text-muted-foreground uppercase">
-                          Gap Description
-                        </span>
-                        <p className="text-sm text-foreground mt-1">
-                          {gap.description}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-xs font-medium text-muted-foreground uppercase">
-                          Remediation
-                        </span>
-                        <p className="text-sm text-foreground mt-1">
-                          {gap.remediation}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground uppercase">
-                            Effort
-                          </span>
-                          <p className="text-sm text-foreground mt-0.5">
-                            {gap.estimated_effort}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground uppercase">
-                            Status
-                          </span>
-                          <p className="text-sm text-foreground mt-0.5 capitalize">
-                            {gap.status.replace(/_/g, " ")}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="p-5 border-t border-border bg-secondary/30">
+          <div className="mt-4 p-5 rounded-xl border border-border bg-secondary/30">
             {!generatedDoc ? (
               <button
                 onClick={handleGenerateDoc}
