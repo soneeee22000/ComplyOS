@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: #fafafa;
@@ -45,4 +46,78 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* ComplyOS prose overrides for compliance documents */
+.prose-complyos h1,
+.prose-complyos h2,
+.prose-complyos h3 {
+  color: var(--primary);
+}
+
+.prose-complyos h2 {
+  padding-bottom: 0.25rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.prose-complyos table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.prose-complyos th {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prose-complyos td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.prose-complyos tr:nth-child(even) td {
+  background-color: var(--secondary);
+}
+
+.prose-complyos code:not(pre code) {
+  background-color: var(--secondary);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.8em;
+}
+
+.prose-complyos pre {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.prose-complyos blockquote {
+  border-left-color: var(--primary);
+  background-color: #eff6ff;
+  padding: 0.75rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.prose-complyos hr {
+  border-color: var(--border);
+}
+
+.prose-complyos a {
+  color: var(--primary);
+}
+
+/* Compact prose for chat messages */
+.prose-compact > *:first-child {
+  margin-top: 0;
+}
+
+.prose-compact > *:last-child {
+  margin-bottom: 0;
 }

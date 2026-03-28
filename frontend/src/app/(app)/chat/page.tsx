@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Loader2, Shield, BookOpen } from "lucide-react";
 import { api } from "@/lib/api";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   cited_articles?: string[];
+  confidence?: number;
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -42,6 +44,7 @@ export default function ChatPage() {
         role: "assistant",
         content: response.answer,
         cited_articles: response.cited_articles,
+        confidence: response.confidence,
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
@@ -50,7 +53,7 @@ export default function ChatPage() {
         {
           role: "assistant",
           content:
-            "Sorry, I could not process your question. Make sure the backend is running on localhost:8000.",
+            "Sorry, I could not process your question. Make sure the backend is running.",
         },
       ]);
     } finally {
@@ -99,25 +102,56 @@ export default function ChatPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
+                {msg.role === "assistant" && (
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                    <Shield className="w-4 h-4 text-primary" />
+                  </div>
+                )}
                 <div
                   className={`max-w-[80%] rounded-xl px-4 py-3 ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground"
+                      : "bg-card border border-border shadow-sm text-card-foreground"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === "assistant" ? (
+                    <MarkdownRenderer content={msg.content} compact />
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  )}
+
                   {msg.cited_articles && msg.cited_articles.length > 0 && (
-                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-foreground/10">
-                      <BookOpen className="w-3 h-3 opacity-60" />
-                      <span className="text-xs opacity-60">
-                        {msg.cited_articles.join(", ")}
+                    <div className="flex items-center gap-1.5 mt-3 pt-2.5 border-t border-border flex-wrap">
+                      <BookOpen className="w-3.5 h-3.5 text-primary/70 shrink-0" />
+                      {msg.cited_articles.map((article) => (
+                        <span
+                          key={article}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                        >
+                          {article}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {msg.confidence !== undefined && msg.role === "assistant" && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="h-1 flex-1 rounded-full bg-border overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary/60 transition-all"
+                          style={{
+                            width: `${Math.round(msg.confidence * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(msg.confidence * 100)}%
                       </span>
                     </div>
                   )}
@@ -125,9 +159,12 @@ export default function ChatPage() {
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start">
-                <div className="bg-secondary rounded-xl px-4 py-3">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Shield className="w-4 h-4 text-primary" />
+                </div>
+                <div className="bg-card border border-border shadow-sm rounded-xl px-4 py-3">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
                 </div>
               </div>
             )}

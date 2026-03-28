@@ -12,7 +12,9 @@ import {
   FileText,
   Download,
   ClipboardCopy,
+  FileDown,
 } from "lucide-react";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import type { AISystem, EnhancedGapAnalysisResult } from "@/lib/api";
 import { api } from "@/lib/api";
 import { RequirementTree } from "@/components/requirement-tree";
@@ -48,6 +50,7 @@ export function GapAnalysisPanel({ system }: GapAnalysisPanelProps) {
   const [expandedGap, setExpandedGap] = useState<number | null>(null);
   const [generatingDoc, setGeneratingDoc] = useState(false);
   const [generatedDoc, setGeneratedDoc] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [error, setError] = useState("");
 
   const handleAnalyze = async () => {
@@ -169,28 +172,44 @@ export function GapAnalysisPanel({ system }: GapAnalysisPanelProps) {
                       Copy
                     </button>
                     <button
-                      onClick={() => {
-                        const blob = new Blob([generatedDoc], {
-                          type: "text/markdown",
-                        });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `${system.name.replace(/\s+/g, "-")}-compliance-docs.md`;
-                        a.click();
-                        URL.revokeObjectURL(url);
+                      onClick={async () => {
+                        setDownloadingPdf(true);
+                        try {
+                          const { pdf } = await import("@react-pdf/renderer");
+                          const { CompliancePDFDocument } =
+                            await import("./pdf-document");
+                          const blob = await pdf(
+                            <CompliancePDFDocument
+                              content={generatedDoc}
+                              systemName={system.name}
+                              docType="technical_documentation"
+                              generatedAt={new Date().toISOString()}
+                            />,
+                          ).toBlob();
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `${system.name.replace(/\s+/g, "-")}-compliance-docs.pdf`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        } finally {
+                          setDownloadingPdf(false);
+                        }
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                      disabled={downloadingPdf}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
-                      <Download className="w-3 h-3" />
-                      Download
+                      {downloadingPdf ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3 h-3" />
+                      )}
+                      {downloadingPdf ? "Generating..." : "Download PDF"}
                     </button>
                   </div>
                 </div>
-                <div className="max-h-96 overflow-y-auto rounded-lg border border-border bg-background p-4">
-                  <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed">
-                    {generatedDoc}
-                  </pre>
+                <div className="max-h-[500px] overflow-y-auto rounded-xl border border-border bg-card p-6">
+                  <MarkdownRenderer content={generatedDoc} />
                 </div>
               </div>
             )}
