@@ -1,0 +1,165 @@
+{
+  "total": 15,
+  "passed": 15,
+  "failed": 0,
+  "pass_rate": 100.0,
+  "details": [
+    {
+      "name": "Health check",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.65,
+      "checks": {
+        "status is healthy": true
+      }
+    },
+    {
+      "name": "Dashboard metrics",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.18,
+      "checks": {
+        "has total_systems": true,
+        "has days_until_deadline": true,
+        "seeded data exists": true
+      }
+    },
+    {
+      "name": "List systems",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.21,
+      "checks": {
+        "returns list": true,
+        "has seeded systems": true
+      }
+    },
+    {
+      "name": "Register new system",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.29,
+      "checks": {
+        "has id": true,
+        "name matches": true,
+        "not classified yet": true
+      }
+    },
+    {
+      "name": "Get system by ID",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.2,
+      "checks": {
+        "correct id": true,
+        "has description": true
+      }
+    },
+    {
+      "name": "Classify system (LLM call)",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 5.08,
+      "checks": {
+        "has risk_level": true,
+        "has confidence": true,
+        "has reasoning": true,
+        "has cited_articles": true,
+        "chatbot is limited risk": true
+      }
+    },
+    {
+      "name": "Register high-risk system",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.22,
+      "checks": {
+        "has id": true
+      }
+    },
+    {
+      "name": "Classify as high-risk (employment)",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 6.26,
+      "checks": {
+        "is high risk": true,
+        "employment category": true,
+        "confidence >= 90%": true
+      }
+    },
+    {
+      "name": "Run ontology-guided gap analysis (7 LLM calls)",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 81.97,
+      "checks": {
+        "has overall_score": true,
+        "has requirement_statuses": true,
+        "7 articles assessed": true,
+        "has priority_actions": true,
+        "has summary": true
+      }
+    },
+    {
+      "name": "Get requirement tree (no LLM)",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.21,
+      "checks": {
+        "7 articles": true,
+        "25 sub-requirements": true,
+        "has articles array": true
+      }
+    },
+    {
+      "name": "Get cross-references for Article 9",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.21,
+      "checks": {
+        "returns list": true,
+        "has cross-references": true,
+        "targets article_72": true
+      }
+    },
+    {
+      "name": "Invalid article returns 404",
+      "passed": true,
+      "status_code": 404,
+      "elapsed": 0.18,
+      "checks": {}
+    },
+    {
+      "name": "Chat about AI Act (LLM call)",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 11.57,
+      "checks": {
+        "has answer": true,
+        "has cited_articles": true
+      }
+    },
+    {
+      "name": "Generate compliance documentation (LLM call)",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 58.0,
+      "checks": {
+        "has content": true,
+        "has id": true,
+        "markdown format": true
+      }
+    },
+    {
+      "name": "Dashboard reflects new data",
+      "passed": true,
+      "status_code": 200,
+      "elapsed": 0.21,
+      "checks": {
+        "more systems than before": true,
+        "has high risk systems": true
+      }
+    }
+  ]
+}
